@@ -10,6 +10,12 @@ services:
       - mysql_data:/var/lib/mysql
     networks:
       - webapp-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "$MYSQL_USERNAME", "-p", "$MYSQL_PASSWORD"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
 
   webapp:
     image: jorgeramirezgayo/webapp14:latest
@@ -17,14 +23,14 @@ services:
     ports:
       - "8443:8443"
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     environment:
       - SPRING_DATASOURCE_URL=${MYSQL_URL}
       - SPRING_DATASOURCE_USERNAME=${MYSQL_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${MYSQL_PASSWORD}
     networks:
       - webapp-network
-    entrypoint: ["/wait-for-it.sh", "mysql:3306", "--", "java", "-jar", "app.jar"]
 
 volumes:
   mysql_data:
